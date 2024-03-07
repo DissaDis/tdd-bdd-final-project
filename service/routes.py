@@ -153,17 +153,6 @@ def get_products(product_id):
     return product.serialize(), status.HTTP_200_OK
 
 
-def test_get_product_not_found(self):
-    """It should not Get a Product thats not found"""
-    # send a self.client.get() request to the BASE_URL with an invalid product ID (e.g., 0)
-    global BASE_URL
-    # assert that the resp.status_code is status.HTTP_404_NOT_FOUND
-    response = self.client.get(f"{BASE_URL}/0")
-    self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-    data = response.get_json()
-    self.assertIn("was not found", data["message"])
-
-
 ######################################################################
 # UPDATE AN EXISTING PRODUCT
 ######################################################################

@@ -28,8 +28,8 @@ import os
 import logging
 from decimal import Decimal
 from unittest import TestCase
-from service import app
 from urllib.parse import quote_plus
+from service import app
 from service.common import status
 from service.models import db, init_db, Product
 from tests.factories import ProductFactory
@@ -182,7 +182,7 @@ class TestProductRoutes(TestCase):
         # create a product to update
         test_product = ProductFactory()
         # send a self.client.post() request to the BASE_URL with a json payload of test_product.serialize()
-        response = self.client.post(BASE_URL,json=test_product.serialize())
+        response = self.client.post(BASE_URL, json=test_product.serialize())
         # assert that the resp.status_code is status.HTTP_201_CREATED
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
@@ -199,6 +199,29 @@ class TestProductRoutes(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         updated_product = response.get_json()
         self.assertEqual(updated_product["description"], "unknown")
+
+    def test_update_product_sad(self):
+        """It shouldn't Update an existing Product"""
+        # create a product to update
+        test_product = ProductFactory()
+        # send a self.client.post() request to the BASE_URL with a json payload of test_product.serialize()
+        response = self.client.post(BASE_URL, json=test_product.serialize())
+        # assert that the resp.status_code is status.HTTP_201_CREATED
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # UPDATE THE PRODUCT
+        # get the data from resp.get_json() as new_product
+        # change new_account["description"] to unknown
+        # send a self.client.put() request to the BASE_URL with a json payload of new_product
+        # assert that the resp.status_code is status.HTTP_200_OK
+        # get the data from resp.get_json() as updated_product
+        # assert that the updated_product["description"] is whatever you changed it to
+        new_product = response.get_json()
+        new_product["description"] = "unknown"
+        new_product["id"] = 0
+
+        response = self.client.put(f"{BASE_URL}/{new_product['id']}", json=new_product)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_delete_product(self):
         """It should Delete a Product"""
@@ -221,7 +244,7 @@ class TestProductRoutes(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.get_json()
         self.assertEqual(len(data), 5)
-    
+
     def test_query_by_name(self):
         """It should Query Products by name"""
         products = self._create_products(5)
@@ -236,7 +259,7 @@ class TestProductRoutes(TestCase):
         # check the data just to be sure
         for product in data:
             self.assertEqual(product["name"], test_name)
-    
+
     def test_query_by_category(self):
         """It should Query Products by category"""
         products = self._create_products(10)
@@ -253,12 +276,12 @@ class TestProductRoutes(TestCase):
         # check the data just to be sure
         for product in data:
             self.assertEqual(product["category"], category.name)
-    
+
     def test_query_by_availability(self):
         """It should Query Products by availability"""
         products = self._create_products(10)
         available_products = [product for product in products if product.available is True]
-        available_count = len(available_products)        
+        available_count = len(available_products)
         # test for available
         response = self.client.get(
             BASE_URL, query_string="available=true"
@@ -269,6 +292,16 @@ class TestProductRoutes(TestCase):
         # check the data just to be sure
         for product in data:
             self.assertEqual(product["available"], True)
+
+    def test_get_product_not_found(self):
+        """It should not Get a Product thats not found"""
+        # send a self.client.get() request to the BASE_URL with an invalid product ID (e.g., 0)
+        # global BASE_URL
+        # assert that the resp.status_code is status.HTTP_404_NOT_FOUND
+        response = self.client.get(f"{BASE_URL}/0")
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        data = response.get_json()
+        self.assertIn("was not found", data["message"])
 
     ######################################################################
     # Utility functions
